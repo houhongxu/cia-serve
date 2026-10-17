@@ -1,0 +1,81 @@
+# cia-serve
+
+English · [简体中文](README.zh-CN.md)
+
+Start a lightweight HTTP server, recursively list Nintendo 3DS `.cia` files, and generate single-file or batch FBI install QR codes locally. Downloads are streamed; file URLs and QR payloads are never sent to third-party QR services.
+
+## Quick start
+
+Requires Node.js 20 or newer, a 3DS with FBI, and a LAN that allows both devices to communicate.
+
+This is a source release and has not been published to npm. Once the GitHub repository is public, run:
+
+```sh
+npx --yes --package github:houhongxu/cia-serve cia-serve
+npx --yes --package github:houhongxu/cia-serve cia-serve ./cias --host 192.168.1.20
+```
+
+The current working directory is served by default. The first npm run may download the tool and its dependencies; install QR generation itself stays local. After a future npm publication, the command will become `npx cia-serve`. For now, use the GitHub command above to avoid running an unrelated package with the same npm name.
+
+1. Open the address printed in the terminal. The terminal QR opens the browser page on a phone; scan the install codes inside that page with FBI.
+2. The page selects the first 1000 files and generates install codes automatically. Search, select all, clear the selection, or generate a single-file QR.
+3. On the 3DS, choose **FBI → Remote Install → Scan QR Code**.
+4. Scan an install code and confirm in FBI. After a batch finishes, scan the next code. Keep the computer and server running.
+
+## Options
+
+| Option | Purpose | Default |
+| --- | --- | --- |
+| `[directory]` | Directory to scan recursively | Current working directory |
+| `--port, -p` | HTTP listen port, 1–65535 | `8080` |
+| `--host` | IPv4 in install URLs; does not change the bind address | Automatic non-loopback IPv4 |
+| `--bind` | HTTP listen IPv4 | `0.0.0.0` |
+| `--public-url` | Reachable HTTP origin; overrides the advertised address | None |
+| `--no-qr` | Disable the terminal browser-entry QR | Off |
+| `--help, -h` | Show help | — |
+| `--version, -v` | Show version | — |
+
+```sh
+# From the source checkout after npm ci
+node bin/cia-serve.js /path/to/cias --host 192.168.1.20 --port 8080
+node bin/cia-serve.js /path/to/cias --public-url http://192.168.1.20:8080
+```
+
+`--public-url` accepts only an `http://` origin with no path, credentials, query or fragment. This tool is designed for LAN HTTP use; the 3DS must be able to reach that address.
+
+## FBI batch protocol
+
+FBI's official [QR handler](https://github.com/Steveice10/FBI/blob/master/source/fbi/remoteinstall.c) passes the QR text directly to its [URL installer](https://github.com/Steveice10/FBI/blob/master/source/fbi/action/installurl.c), which splits direct download URLs on newline characters. Batch codes therefore contain newline-separated direct CIA URLs, rather than a webpage or a list-file URL.
+
+Each code contains at most 5 files and 280 UTF-8 bytes. Larger selections become multiple codes. Select up to 1000 files per operation. Short file IDs keep Unicode names, spaces and long paths out of QR payloads. Enlarge the page or use a single-file code if scanning is difficult. Each batch requires a scan and confirmation in FBI.
+
+## LAN and WSL2
+
+- Automatic detection may choose a VPN, virtual adapter or WSL address. Candidate addresses are printed at startup; override with `--host`.
+- A page loading in your computer's browser does not prove the 3DS can reach it. Check the same LAN, guest Wi-Fi isolation, host firewall and chosen port.
+- With default WSL2 NAT, the 3DS usually cannot reach WSL's private address directly. Use an already configured reachable network path with `--host` / `--public-url`, or run the tool in a host environment the 3DS can reach. This tool does not change Windows firewall rules, port forwarding or WSL network mode.
+- The default bind address listens on every IPv4 adapter. Run on a trusted LAN; public hosting is unnecessary. Use `--bind 127.0.0.1` for local access only; the 3DS cannot connect in that mode.
+
+## Scope and validation
+
+Only regular `.cia` files discovered at startup are served, with a case-insensitive extension. Other files are not exposed, and file/directory symlinks are skipped. Requests use registered file IDs instead of joining user paths onto disk paths. Downloads recheck symlinks and file boundaries. Filenames are rendered as text. There is no authentication: devices on a reachable network can access the catalog and CIA files.
+
+Restart after adding, deleting or renaming files. Do not modify files during downloads. The tool does not validate CIA installability or report whether an installation on the 3DS succeeded. Share only files you have the right to use; this repository and npm package contain no CIA files.
+
+Automated tests cover recursive listing, direct downloads, HEAD, Range, sparse files over 4 GiB, batch format and capacity, traversal rejection, symlink replacement, and CLI arguments. Camera scanning and installation have not yet been tested on real 3DS hardware; QR density and connectivity still depend on the device and network.
+
+## Development
+
+```sh
+git clone https://github.com/houhongxu/cia-serve.git
+cd cia-serve
+npm ci --ignore-scripts
+npm run check
+npm test
+npm pack --dry-run
+node bin/cia-serve.js /path/to/cias
+```
+
+[贡献指南 / Contributing](CONTRIBUTING.md) · [MIT 许可证 / License](LICENSE)
+
+Run development, tests, Git and dependency installation in the same environment; the maintainer uses WSL Ubuntu. GitHub Actions checks Node.js 20, 22 and 24. npm publishing is currently manual and has not been performed.

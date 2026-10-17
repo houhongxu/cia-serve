@@ -1,0 +1,44 @@
+{
+  "name": "cia-serve",
+  "version": "0.1.0",
+  "description": "局域网 CIA 安装二维码 / LAN CIA install QR codes for FBI",
+  "type": "module",
+  "bin": {
+    "cia-serve": "bin/cia-serve.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "public/",
+    "README.md",
+    "README.zh-CN.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check bin/cia-serve.js && node --check src/server.js && node --check src/catalog.js && node --check src/qr.js && node --check public/app.js"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/houhongxu/cia-serve.git"
+  },
+  "bugs": {
+    "url": "https://github.com/houhongxu/cia-serve/issues"
+  },
+  "homepage": "https://github.com/houhongxu/cia-serve#readme",
+  "keywords": [
+    "3ds",
+    "cia",
+    "fbi",
+    "qrcode",
+    "cli",
+    "lan"
+  ]
+}

@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>cia-serve · CIA 安装 / Install</title><link rel="stylesheet" href="/style.css"><script type="module" src="/app.js"></script></head>
+<body><main>
+<header><p class="eyebrow">NINTENDO 3DS · LOCAL NETWORK</p><h1>cia-serve</h1><p>选择文件，扫码安装。<br><span>Select files. Scan to install.</span></p></header>
+<section class="instructions"><h2>开始安装 / Get started</h2><ol><li>电脑与 3DS 连接同一局域网。<br><span>Connect your computer and 3DS to the same LAN.</span></li><li>在 3DS 打开 <strong>FBI → Remote Install → Scan QR Code</strong>。<br><span>Open this menu on your 3DS.</span></li><li>扫描下方安装码，在 FBI 确认；每批完成后扫描下一码。<br><span>Scan an install code and confirm in FBI. Scan the next code after each batch finishes.</span></li></ol><p>保持服务运行。较密的二维码可改为单包安装。<br><span>Keep this server running. Use a single-file QR if a batch code is difficult to scan.</span></p></section>
+<section><div class="toolbar"><h2>文件 / Files <small id="count"></small></h2><button id="all" type="button">全选 / Select all</button><button id="none" type="button">清空 / Clear</button></div><p id="address"></p><label class="search">搜索 / Search <input id="search" type="search" placeholder="文件名 / Filename"></label><p id="status" role="status">加载中 / Loading…</p><div id="files"></div><button id="generate" type="button">生成所选安装码 / Generate selected install codes</button></section>
+<section id="codes" aria-live="polite"><h2>安装码 / Install codes</h2><div id="batches"></div></section>
+<footer>二维码在本机生成，文件通过局域网提供。<br>QR codes are generated locally. Files are served over your LAN.<br>WSL2 NAT：请确认 3DS 可访问所显示的地址与端口。<br>WSL2 NAT: ensure your 3DS can reach the advertised address and port.</footer>
+</main></body></html>
