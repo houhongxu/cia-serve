@@ -4,6 +4,10 @@ English · [简体中文](README.zh-CN.md)
 
 Start a lightweight HTTP server, recursively list Nintendo 3DS `.cia` files, and generate single-file or batch FBI install QR codes locally. Downloads are streamed; file URLs and QR payloads are never sent to third-party QR services.
 
+## 0.2.0 development version
+
+The 0.2.0 source includes automatic base/update/DLC identification and installation ordering. This development version has not been published to npm. npm currently provides 0.1.0, which does not include identification. Use the GitHub source command below or a local checkout to try the new functionality.
+
 ## Quick start
 
 Requires Node.js 20 or newer, a 3DS with FBI, and a LAN that allows both devices to communicate.

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util';
+import { readFile } from 'node:fs/promises';
 import { networkInterfaces } from 'node:os';
 import { isIP } from 'node:net';
 import { resolve } from 'node:path';
@@ -29,7 +30,10 @@ async function main() {
     help: { type: 'boolean', short: 'h' }, version: { type: 'boolean', short: 'v' },
   } });
   if (values.help) return console.log(help);
-  if (values.version) return console.log('0.1.0');
+  if (values.version) {
+    const { version } = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+    return console.log(version);
+  }
   if (positionals.length > 1) throw new Error('仅接受一个目录 / Expected one directory');
   if (!/^\d+$/.test(values.port) || Number(values.port) > 65535 || Number(values.port) < 1) {
     throw new Error('端口须为 1–65535 / Port must be 1–65535');

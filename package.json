@@ -1,6 +1,6 @@
 {
   "name": "cia-serve",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "局域网 CIA 安装二维码 / LAN CIA install QR codes for FBI",
   "type": "module",
   "bin": {
@@ -19,7 +19,7 @@
   },
   "scripts": {
     "test": "node --test",
-    "check": "node --check bin/cia-serve.js && node --check src/server.js && node --check src/catalog.js && node --check src/qr.js && node --check public/app.js"
+    "check": "node --check bin/cia-serve.js && node --check src/server.js && node --check src/catalog.js && node --check src/metadata.js && node --check src/qr.js && node --check public/app.js"
   },
   "dependencies": {
     "qrcode": "^1.5.4"
