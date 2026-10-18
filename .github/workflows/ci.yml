@@ -9,7 +9,7 @@ jobs:
     name: Node ${{ matrix.node }}
     runs-on: ubuntu-latest
     env:
-      FBI_QUIRC_DECODER: ${{ runner.temp }}/fbi-quirc/fbi-quirc
+      FBI_QUIRC_DECODER: /tmp/cia-serve-fbi-quirc/fbi-quirc
     strategy:
       matrix:
         node: [20, 22, 24]
