@@ -8,6 +8,8 @@ jobs:
   test:
     name: Node ${{ matrix.node }}
     runs-on: ubuntu-latest
+    env:
+      FBI_QUIRC_DECODER: /tmp/cia-serve-fbi-quirc/fbi-quirc
     strategy:
       matrix:
         node: [20, 22, 24]
@@ -19,5 +21,20 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run check
+      - name: 构建 FBI 原版解码器 / Build original FBI decoder
+        env:
+          FBI_REVISION: 5e0924318f94543a56bbcd954312bf859a8e63a0
+        shell: bash
+        run: |
+          set -euo pipefail
+          decoder_dir="$(dirname "$FBI_QUIRC_DECODER")"
+          mkdir -p "$decoder_dir"
+          for file in decode.c quirc.h quirc_internal.h version_db.c; do
+            curl --fail --silent --show-error --location --retry 3 \
+              "https://raw.githubusercontent.com/Steveice10/FBI/$FBI_REVISION/source/libs/quirc/$file" \
+              -o "$decoder_dir/$file"
+          done
+          cc -std=c99 -O2 -I "$decoder_dir" test/fixtures/fbi-quirc-driver.c \
+            "$decoder_dir/decode.c" "$decoder_dir/version_db.c" -o "$FBI_QUIRC_DECODER"
       - run: npm test
       - run: npm pack --dry-run

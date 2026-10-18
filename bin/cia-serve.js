@@ -5,7 +5,7 @@ import { networkInterfaces } from 'node:os';
 import { isIP } from 'node:net';
 import { resolve } from 'node:path';
 import { createApp } from '../src/server.js';
-import QRCode from 'qrcode';
+import { encodeFbiQr } from '../src/qr.js';
 
 const help = `cia-serve [directory] [options]
 局域网 CIA 安装二维码 / LAN CIA install QR codes for FBI
@@ -66,7 +66,7 @@ async function main() {
   console.log('WSL2 NAT: 3DS 需可访问主机端口；防火墙需手动配置 / 3DS must reach the host port; firewall setup is manual.');
   if (!values['no-qr']) {
     console.log('\n手机浏览器入口（FBI 使用页面安装码） / Browser entry (use page install codes in FBI):');
-    console.log(await QRCode.toString(baseUrl, { type: 'terminal', small: true }));
+    console.log(await encodeFbiQr(baseUrl, { type: 'terminal', small: true }));
   }
   const stop = () => { server.close(); server.closeIdleConnections(); };
   process.once('SIGINT', stop);
