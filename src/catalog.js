@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { constants } from 'node:fs';
 import { lstat, open, readdir, realpath } from 'node:fs/promises';
 import path from 'node:path';
+import { readCiaMetadata, guessFromFilename, sortCatalogEntries } from './metadata.js';
 
 const inside = (root, target) => {
   const relative = path.relative(root, target);
@@ -25,8 +26,17 @@ export async function createCatalog(directory) {
     }
   }
   await walk(root);
-  entries.sort((a, b) => a.name.localeCompare(b.name));
-  return { root, entries, byId: new Map(entries.map(entry => [entry.id, entry])) };
+  for (const entry of entries) {
+    const opened = await openCatalogFile({ root }, entry);
+    let metadata;
+    if (opened) {
+      try { metadata = await readCiaMetadata(opened.handle, opened.stat.size); }
+      finally { await opened.handle.close(); }
+    }
+    Object.assign(entry, metadata?.source === 'tmd' ? metadata : guessFromFilename(entry.name, metadata?.reason));
+  }
+  const sorted = sortCatalogEntries(entries);
+  return { root, entries: sorted, byId: new Map(sorted.map(entry => [entry.id, entry])) };
 }
 export async function openCatalogFile(catalog, entry) {
   if (!entry || !inside(catalog.root, entry.absolute)) return null;

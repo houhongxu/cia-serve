@@ -32,14 +32,17 @@ export async function createApp({ directory, getBaseUrl }) {
       }
       if (url.pathname === '/api/files') return json(200, {
         baseUrl: getBaseUrl(),
-        files: catalog.entries.map(({ id, name, size }) => ({ id, name, size, url: fileUrl(getBaseUrl(), id) })),
+        files: catalog.entries.map(({ id, name, size, type, source, titleId, groupId, reason }) =>
+          ({ id, name, size, type, source, titleId, groupId, reason, url: fileUrl(getBaseUrl(), id) })),
       });
       if (url.pathname === '/api/qr') {
         const ids = [...new Set((url.searchParams.get('ids') || '').split(',').filter(Boolean))];
         if (!ids.length || ids.length > 1000 || ids.some(id => !catalog.byId.has(id))) {
           return json(400, { error: '选择 1–1000 个有效文件 / Select 1–1000 valid files' });
         }
-        return json(200, { batches: await makeBatches(ids.map(id => fileUrl(getBaseUrl(), id))) });
+        const chosen = new Set(ids);
+        const ordered = catalog.entries.filter(entry => chosen.has(entry.id));
+        return json(200, { batches: await makeBatches(ordered.map(entry => fileUrl(getBaseUrl(), entry.id))) });
       }
       const match = /^\/cia\/([a-f0-9]{24})\.cia$/.exec(url.pathname);
       if (!match) return send(404, '未找到 / Not found');

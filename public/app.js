@@ -2,6 +2,8 @@ const el = id => document.getElementById(id);
 let files = [];
 const selected = new Set();
 let request = 0;
+const typeLabels = { base: '本体 / Base', update: '更新 / Update', dlc: 'DLC', unknown: '未知 / Unknown' };
+const sourceLabels = { tmd: 'TMD', filename: '文件名推测 / Filename guess', unknown: '未识别 / Unidentified' };
 const size = bytes => bytes < 1048576 ? (bytes / 1024).toFixed(1) + ' KiB' : (bytes / 1048576).toFixed(1) + ' MiB';
 function render() {
   const query = el('search').value.toLocaleLowerCase();
@@ -18,7 +20,10 @@ function render() {
     label.htmlFor = input.id;
     label.textContent = file.name;
     const meta = document.createElement('small');
-    meta.textContent = size(file.size);
+    meta.textContent = [size(file.size), typeLabels[file.type] || typeLabels.unknown,
+      sourceLabels[file.source] || sourceLabels.unknown,
+      file.titleId ? 'ID: ' + file.titleId : '',
+      file.groupId ? '同游戏 / Group: ' + file.groupId : '未分组 / Ungrouped'].filter(Boolean).join(' · ');
     label.append(meta);
     const button = document.createElement('button');
     button.type = 'button';
@@ -34,6 +39,8 @@ function updateCount() {
   el('generate').disabled = !selected.size;
 }
 async function generate(ids) {
+  const chosen = new Set(ids);
+  ids = files.filter(file => chosen.has(file.id)).map(file => file.id);
   const current = ++request;
   el('status').textContent = '生成中 / Generating…';
   try {

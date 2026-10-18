@@ -8,14 +8,20 @@
 
 需要 Node.js 20 或更高版本、安装了 FBI 的 3DS，以及两端互通的局域网。
 
-当前是源码版本，尚未发布到 npm。GitHub 仓库公开后，可以直接运行：
+在包含 CIA 文件的目录中运行：
+
+```sh
+npx cia-serve
+npx cia-serve ./cias --host 192.168.1.20
+```
+
+运行目录默认是当前工作目录。npm 首次运行可能需要联网下载工具和依赖；安装二维码本身在本地生成。
+
+也可以直接从 GitHub 源码运行：
 
 ```sh
 npx --yes --package github:houhongxu/cia-serve cia-serve
-npx --yes --package github:houhongxu/cia-serve cia-serve ./cias --host 192.168.1.20
 ```
-
-运行目录默认是当前工作目录。npm 首次运行可能需要联网下载工具和依赖；安装二维码本身在本地生成。计划中的 npm 发布完成后，命令将简化为 `npx cia-serve`；目前请使用上面的 GitHub 命令，避免运行 npm 上同名的其他包。
 
 1. 浏览器打开终端显示的地址。终端二维码是手机浏览器入口；FBI 请扫描网页内的安装码。
 2. 网页默认选中前 1000 个文件，并自动生成安装码。可搜索、全选、清空，也可为单个文件生成二维码。
@@ -49,6 +55,14 @@ FBI 官方源码的 [QR 扫描处理](https://github.com/Steveice10/FBI/blob/mas
 
 每码最多 5 个文件、280 个 UTF-8 字节；更多文件自动分码。一次最多选择 1000 个文件。短文件 ID 避免中文、空格和长路径增加二维码密度。如果扫描困难，请放大页面或使用单包码。每批需要一次扫描和 FBI 确认。
 
+## 类型识别与安装顺序
+
+目录扫描会读取 CIA 头和 TMD，将支持的 Title ID 高位识别为本体（`00040000`）、更新（`0004000e`）和 DLC（`0004008c`）。支持类型的完整低 32 位相同才会分为同组，并按 **本体 → 更新 → DLC** 排序。后端会执行这一顺序，不受勾选先后影响；不会把相似文件名或不同 Title ID 强行合并。
+
+每个文件最多读取 232 字节：32 字节 CIA 头、TMD 签名类型和固定 TMD 头。读取前检查区段长度、64 字节对齐、随签名类型变化的偏移及文件边界。支持 RSA-4096、RSA-2048 和 ECDSA 的 SHA-1 / SHA-256 签名布局，但不验证签名本身；不解密、重写或移动内容。格式依据：[GodMode9 CIA 偏移](https://github.com/d0k3/GodMode9/blob/master/arm9/source/game/cia.c)、[GodMode9 TMD 结构](https://github.com/d0k3/GodMode9/blob/master/arm9/source/game/tmd.h)、[3dbrew 签名布局](https://www.3dbrew.org/wiki/Title_metadata)。
+
+页面会标明识别来源。元数据无法解析时，只检查文件名本身的 Title ID 或明确的本体、更新、DLC 提示，忽略父目录名；此时标为 **文件名推测**，且不自动分组。提示缺失或冲突时保持 **未知**。若 TMD 结构可读取但类型不支持，同样保持未知，不使用文件名覆盖。识别不代表来源可信、内容完整或可安装；修改文件后需重启服务刷新识别结果。
+
 ## 局域网与 WSL2
 
 - 自动选择的网卡可能是 VPN、虚拟网卡或 WSL 地址。启动时会列出候选地址；使用 `--host` 覆盖。
@@ -62,7 +76,7 @@ FBI 官方源码的 [QR 扫描处理](https://github.com/Steveice10/FBI/blob/mas
 
 添加、删除或重命名文件后请重启服务。下载中的文件不应被修改。工具不校验 CIA 内容是否可安装，也不报告 3DS 安装是否成功。仅分享你有权使用的文件；仓库和 npm 包不包含 CIA。
 
-自动化测试覆盖递归列表、直接文件下载、HEAD、Range、超过 4 GiB 的稀疏文件、批次格式和容量、遍历拒绝、符号链接替换和 CLI 参数。尚未使用 3DS 真机验证相机扫描及安装成功；QR 密度和网络连通性仍取决于设备与网络。
+自动化测试覆盖模拟 CIA/TMD 结构、签名偏移、有界元数据读取、类型与分组、逆序选择排序、递归列表、直接文件下载、HEAD、Range、超过 4 GiB 的稀疏文件、批次格式和容量、遍历拒绝、符号链接替换和 CLI 参数。尚未使用 3DS 真机验证相机扫描及安装成功；QR 密度和网络连通性仍取决于设备与网络。
 
 ## 开发
 
@@ -78,4 +92,4 @@ node bin/cia-serve.js /path/to/cias
 
 [贡献指南 / Contributing](CONTRIBUTING.md) · [MIT 许可证 / License](LICENSE)
 
-开发、测试、Git 和依赖安装在同一环境执行；本项目维护环境为 WSL Ubuntu。GitHub Actions 配置了 Node.js 20、22、24 的检查。当前不自动发布 npm。
+开发、测试、Git 和依赖安装在同一环境执行；本项目维护环境为 WSL Ubuntu。GitHub Actions 配置了 Node.js 20、22、24 的检查。npm 版本由维护者手动发布，CI 不自动发布。

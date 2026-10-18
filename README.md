@@ -8,14 +8,20 @@ Start a lightweight HTTP server, recursively list Nintendo 3DS `.cia` files, and
 
 Requires Node.js 20 or newer, a 3DS with FBI, and a LAN that allows both devices to communicate.
 
-This is a source release and has not been published to npm. Once the GitHub repository is public, run:
+Run from the directory containing your CIA files:
+
+```sh
+npx cia-serve
+npx cia-serve ./cias --host 192.168.1.20
+```
+
+The current working directory is served by default. The first npm run may download the tool and its dependencies; install QR generation itself stays local.
+
+Alternatively, run directly from the GitHub source:
 
 ```sh
 npx --yes --package github:houhongxu/cia-serve cia-serve
-npx --yes --package github:houhongxu/cia-serve cia-serve ./cias --host 192.168.1.20
 ```
-
-The current working directory is served by default. The first npm run may download the tool and its dependencies; install QR generation itself stays local. After a future npm publication, the command will become `npx cia-serve`. For now, use the GitHub command above to avoid running an unrelated package with the same npm name.
 
 1. Open the address printed in the terminal. The terminal QR opens the browser page on a phone; scan the install codes inside that page with FBI.
 2. The page selects the first 1000 files and generates install codes automatically. Search, select all, clear the selection, or generate a single-file QR.
@@ -49,6 +55,14 @@ FBI's official [QR handler](https://github.com/Steveice10/FBI/blob/master/source
 
 Each code contains at most 5 files and 280 UTF-8 bytes. Larger selections become multiple codes. Select up to 1000 files per operation. Short file IDs keep Unicode names, spaces and long paths out of QR payloads. Enlarge the page or use a single-file code if scanning is difficult. Each batch requires a scan and confirmation in FBI.
 
+## Type identification and install order
+
+The catalog reads the CIA header and TMD to identify base applications (`00040000`), updates (`0004000e`) and DLC (`0004008c`). Files with the same complete low 32 bits of a supported TMD Title ID form a group and are ordered **base → update → DLC**. The server applies this order regardless of checkbox selection order. Similar filenames and different Title IDs are never merged.
+
+Parsing uses at most 232 bytes per file: the 32-byte CIA header, the TMD signature type, and the fixed TMD header. Section sizes, 64-byte alignment, signature-dependent offsets and file boundaries are checked before reading. It supports the RSA-4096, RSA-2048 and ECDSA signature layouts with SHA-1 or SHA-256; signatures themselves are not verified. Content is never decrypted, rewritten or moved. Format references: [GodMode9 CIA offsets](https://github.com/d0k3/GodMode9/blob/master/arm9/source/game/cia.c), [GodMode9 TMD structure](https://github.com/d0k3/GodMode9/blob/master/arm9/source/game/tmd.h), and [3dbrew signature layouts](https://www.3dbrew.org/wiki/Title_metadata).
+
+The page labels identification sources. If metadata cannot be parsed, only the filename itself is checked for a Title ID or explicit base/update/DLC hints; parent directory names are ignored. Such results are labeled **Filename guess** and are never grouped automatically. Conflicting or absent hints remain **Unknown**. A structurally readable TMD with an unsupported title category also remains Unknown, without a filename override. Identification does not establish authenticity, content integrity or installability. Restart after changing files to refresh their identification.
+
 ## LAN and WSL2
 
 - Automatic detection may choose a VPN, virtual adapter or WSL address. Candidate addresses are printed at startup; override with `--host`.
@@ -62,7 +76,7 @@ Only regular `.cia` files discovered at startup are served, with a case-insensit
 
 Restart after adding, deleting or renaming files. Do not modify files during downloads. The tool does not validate CIA installability or report whether an installation on the 3DS succeeded. Share only files you have the right to use; this repository and npm package contain no CIA files.
 
-Automated tests cover recursive listing, direct downloads, HEAD, Range, sparse files over 4 GiB, batch format and capacity, traversal rejection, symlink replacement, and CLI arguments. Camera scanning and installation have not yet been tested on real 3DS hardware; QR density and connectivity still depend on the device and network.
+Automated tests cover synthetic CIA/TMD layouts, signature-dependent offsets, bounded metadata reads, classification/grouping, reversed selection order, recursive listing, direct downloads, HEAD, Range, sparse files over 4 GiB, batch format and capacity, traversal rejection, symlink replacement, and CLI arguments. Camera scanning and installation have not yet been tested on real 3DS hardware; QR density and connectivity still depend on the device and network.
 
 ## Development
 
@@ -78,4 +92,4 @@ node bin/cia-serve.js /path/to/cias
 
 [贡献指南 / Contributing](CONTRIBUTING.md) · [MIT 许可证 / License](LICENSE)
 
-Run development, tests, Git and dependency installation in the same environment; the maintainer uses WSL Ubuntu. GitHub Actions checks Node.js 20, 22 and 24. npm publishing is currently manual and has not been performed.
+Run development, tests, Git and dependency installation in the same environment; the maintainer uses WSL Ubuntu. GitHub Actions checks Node.js 20, 22 and 24. Maintainers publish npm releases manually; CI does not publish.
