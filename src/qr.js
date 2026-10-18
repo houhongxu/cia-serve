@@ -1,6 +1,8 @@
 import QRCode from 'qrcode';
 export const MAX_QR_BYTES = 280;
 export const MAX_BATCH_FILES = 5;
+// 避免 FBI 旧版 quirc 的混段计数缺陷 / Avoid mixed-mode count bugs in FBI's bundled quirc.
+export const encodeFbiQr = (payload, options) => QRCode.toString([{ data: payload, mode: 'byte' }], options);
 export const fileUrl = (baseUrl, id) => baseUrl + '/cia/' + id + '.cia';
 export function splitBatches(urls) {
   const batches = [];
@@ -21,6 +23,6 @@ export async function makeBatches(urls) {
   return Promise.all(splitBatches(urls).map(async batch => {
     const payload = batch.join('\n');
     return { count: batch.length, payload,
-      svg: await QRCode.toString(payload, { type: 'svg', errorCorrectionLevel: 'M', margin: 4, width: 360 }) };
+      svg: await encodeFbiQr(payload, { type: 'svg', errorCorrectionLevel: 'M', margin: 4, width: 360 }) };
   }));
 }

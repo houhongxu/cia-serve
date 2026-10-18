@@ -59,6 +59,8 @@ FBI 官方源码的 [QR 扫描处理](https://github.com/Steveice10/FBI/blob/mas
 
 每码最多 5 个文件、280 个 UTF-8 字节；更多文件自动分码。一次最多选择 1000 个文件。短文件 ID 避免中文、空格和长路径增加二维码密度。如果扫描困难，请放大页面或使用单包码。每批需要一次扫描和 FBI 确认。
 
+安装码和终端浏览器入口码统一使用单一 byte 段。[FBI 自带的 quirc 解码器](https://github.com/Steveice10/FBI/blob/5e0924318f94543a56bbcd954312bf859a8e63a0/source/libs/quirc/decode.c#L729-L735)在 QR 版本 7–26 使用了错误的字母数字段计数位宽，自动混合编码可能因此产生 URL 乱码。原版解码器回归已复现四 URL、版本 11 二维码被读成 `http/GZP…`，并逐字节验证修复后的实际 SVG 内容。此修复解决编码兼容问题，不代表 3DS 网络已连通。
+
 ## 类型识别与安装顺序
 
 目录扫描会读取 CIA 头和 TMD，将支持的 Title ID 高位识别为本体（`00040000`）、更新（`0004000e`）和 DLC（`0004008c`）。支持类型的完整低 32 位相同才会分为同组，并按 **本体 → 更新 → DLC** 排序。后端会执行这一顺序，不受勾选先后影响；不会把相似文件名或不同 Title ID 强行合并。
@@ -92,6 +94,18 @@ npm run check
 npm test
 npm pack --dry-run
 node bin/cia-serve.js /path/to/cias
+```
+
+可选旧版解码器回归需要 C 编译器和 curl；命令只将固定上游源码下载到临时目录。未设置 `FBI_QUIRC_DECODER` 时，三项原生解码测试会跳过。请在仓库根目录运行：
+
+```sh
+fbi_source=$(mktemp -d)
+fbi_revision=5e0924318f94543a56bbcd954312bf859a8e63a0
+for file in decode.c quirc.h quirc_internal.h version_db.c; do
+  curl -fsSL "https://raw.githubusercontent.com/Steveice10/FBI/$fbi_revision/source/libs/quirc/$file" -o "$fbi_source/$file"
+done
+cc -std=c99 -I "$fbi_source" test/fixtures/fbi-quirc-driver.c "$fbi_source/decode.c" "$fbi_source/version_db.c" -o "$fbi_source/fbi-quirc"
+FBI_QUIRC_DECODER="$fbi_source/fbi-quirc" node --test test/fbi-qr.test.js
 ```
 
 [贡献指南 / Contributing](CONTRIBUTING.md) · [MIT 许可证 / License](LICENSE)

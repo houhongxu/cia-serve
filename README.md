@@ -59,6 +59,8 @@ FBI's official [QR handler](https://github.com/Steveice10/FBI/blob/master/source
 
 Each code contains at most 5 files and 280 UTF-8 bytes. Larger selections become multiple codes. Select up to 1000 files per operation. Short file IDs keep Unicode names, spaces and long paths out of QR payloads. Enlarge the page or use a single-file code if scanning is difficult. Each batch requires a scan and confirmation in FBI.
 
+All install codes and terminal browser-entry codes use a single byte segment. FBI's [bundled quirc decoder](https://github.com/Steveice10/FBI/blob/5e0924318f94543a56bbcd954312bf859a8e63a0/source/libs/quirc/decode.c#L729-L735) uses incorrect alphanumeric count widths for QR versions 7–26; automatic mixed-mode encoding can therefore produce corrupted URLs. The native-decoder regression reproduces a four-URL version-11 code decoding as `http/GZP…`, then verifies the fixed production SVG payloads byte for byte. This fixes encoding compatibility; it does not establish 3DS network connectivity.
+
 ## Type identification and install order
 
 The catalog reads the CIA header and TMD to identify base applications (`00040000`), updates (`0004000e`) and DLC (`0004008c`). Files with the same complete low 32 bits of a supported TMD Title ID form a group and are ordered **base → update → DLC**. The server applies this order regardless of checkbox selection order. Similar filenames and different Title IDs are never merged.
@@ -92,6 +94,18 @@ npm run check
 npm test
 npm pack --dry-run
 node bin/cia-serve.js /path/to/cias
+```
+
+Optional legacy-decoder regression requires a C compiler and curl. It downloads fixed upstream source into a temporary directory; the three native tests are skipped unless `FBI_QUIRC_DECODER` is set. Run from the repository root:
+
+```sh
+fbi_source=$(mktemp -d)
+fbi_revision=5e0924318f94543a56bbcd954312bf859a8e63a0
+for file in decode.c quirc.h quirc_internal.h version_db.c; do
+  curl -fsSL "https://raw.githubusercontent.com/Steveice10/FBI/$fbi_revision/source/libs/quirc/$file" -o "$fbi_source/$file"
+done
+cc -std=c99 -I "$fbi_source" test/fixtures/fbi-quirc-driver.c "$fbi_source/decode.c" "$fbi_source/version_db.c" -o "$fbi_source/fbi-quirc"
+FBI_QUIRC_DECODER="$fbi_source/fbi-quirc" node --test test/fbi-qr.test.js
 ```
 
 [贡献指南 / Contributing](CONTRIBUTING.md) · [MIT 许可证 / License](LICENSE)
